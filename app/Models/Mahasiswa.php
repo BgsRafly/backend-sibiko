@@ -24,4 +24,14 @@ class Mahasiswa extends Model
     {
         return $this->belongsTo(User::class, 'id_user', 'id');
     }
+
+    public function ajuan()
+{
+    return $this->hasMany(
+        Ajuan::class,
+        'nim',
+        'nim'
+    );
+}
+
 }
