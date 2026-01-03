@@ -14,7 +14,7 @@ return [
     */
 
     'defaults' => [
-        'guard' => env('AUTH_GUARD', 'web'),
+        'guard' => env('AUTH_GUARD', 'api'),
         'passwords' => env('AUTH_PASSWORD_BROKER', 'users'),
     ],
 
@@ -35,7 +35,12 @@ return [
     |
     */
 
-    'guards' => [
+        'guards' => [
+            'mahasiswa' => [
+                'driver' => 'sanctum',
+                'provider' => 'mahasiswa',
+        ],
+
         'web' => [
             'driver' => 'session',
             'provider' => 'users',
@@ -64,6 +69,11 @@ return [
             'driver' => 'eloquent',
             'model' => env('AUTH_MODEL', App\Models\User::class),
         ],
+
+        'mahasiswa' => [
+        'driver' => 'eloquent',
+        'model' => App\Models\Mahasiswa::class,
+    ],
 
         // 'users' => [
         //     'driver' => 'database',
