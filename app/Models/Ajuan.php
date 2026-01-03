@@ -45,4 +45,9 @@ class Ajuan extends Model
         // Sesuaikan nama foreign key menjadi id_handler sesuai gambar kiri
         return $this->belongsTo(Staff::class, 'id_handler', 'id_staff');
     }
+    public function suratRujukan()
+    {
+    // Hubungkan id_ajuan di tabel ajuan dengan id_ajuan di tabel surat_rujukan
+    return $this->hasOne(SuratRujukan::class, 'id_ajuan', 'id_ajuan');
+    }
 }

@@ -68,7 +68,6 @@ class StaffAjuanController extends Controller
             'catatan_sesi' => $request->catatan_sesi,
             'tingkat_penanganan' => $request->tingkat_penanganan,
             'status' => ($request->tingkat_penanganan == 'Fakultas') ? 'pending' : 'terkirim', 
-            // Jika ke fakultas, id_handler harus diupdate ke ID WD3 (logika tambahan diperlukan)
         ]);
 
         return response()->json(['message' => 'Sesi diperbarui']);

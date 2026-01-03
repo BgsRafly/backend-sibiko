@@ -47,8 +47,8 @@ public function index(Request $request)
         'jenis_layanan'     => $request->jenis_layanan,
         'tanggal_pengajuan' => now(), // Otomatis waktu saat ini
         'tanggal_jadwal'    => $request->tanggal_jadwal, // Menyimpan usulan jadwal dari mahasiswa
-        'status'            => 'pending', // Default status
-        'tingkat_penanganan'=> 'Prodi', // Default tingkat penanganan
+        'status'            => 'pending', 
+        'tingkat_penanganan'=> 'Prodi', 
     ]);
 
     return response()->json([
@@ -60,12 +60,10 @@ public function index(Request $request)
     // 3. DETAIL ajuan
    public function show(Request $request)
     {
-    // Mengambil data mahasiswa dari user yang login
     $mahasiswa = $request->user()->mahasiswa;
 
-    // Mencari SATU ajuan TERBARU milik mahasiswa tersebut
     $ajuan = Ajuan::where('nim', $mahasiswa->nim)
-        ->latest('tanggal_pengajuan') // Urutkan berdasarkan tanggal terbaru
+        ->latest('tanggal_pengajuan') 
         ->first();
 
     if (!$ajuan) {

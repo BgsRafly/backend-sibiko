@@ -9,6 +9,7 @@ use App\Http\Middleware\RoleMiddleware;
 use App\Http\Controllers\Api\StaffAjuanController;
 use App\Http\Controllers\Api\WD3AjuanController;
 use App\Http\Controllers\Api\AdminController;
+use App\Http\Controllers\Api\MahasiswaController;
 
 
 Route::post('/login', [AuthController::class, 'login']);
@@ -21,6 +22,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/ajuan/{id}', [AjuanController::class, 'show']);
     Route::put('/ajuan/{id}', [AjuanController::class, 'update']);
     Route::delete('/ajuan/{id}', [AjuanController::class, 'destroy']);
+    // Profil Mahasiswa
+    Route::get('/mahasiswa/me', [MahasiswaController::class, 'showProfile']);
+    Route::put('/mahasiswa/update-profil', [MahasiswaController::class, 'updateProfile']);
 
    Route::middleware(['auth:sanctum'])->group(function () {
     // Endpoint khusus Staff
@@ -35,6 +39,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/ajuan/{id}', [WD3AjuanController::class, 'show']);  // Detail ajuan rujukan
         Route::put('/ajuan/{id}/jadwal', [WD3AjuanController::class, 'setJadwal']); // WD3 menentukan jadwal sendiri
         Route::put('/ajuan/{id}/selesai', [WD3AjuanController::class, 'complete']); // Selesai atau Rujuk ke Univ
+        Route::get('/ajuan/{id}/cetak', [WD3AjuanController::class, 'cetakRujukan']);
     });
 });
 
