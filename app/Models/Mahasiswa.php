@@ -14,24 +14,19 @@ class Mahasiswa extends Model
     protected $fillable = [
         'nim',
         'id_user',
+        'id_dosen_pa',
         'nama_lengkap',
         'email',
         'prodi',
         'no_hp',
     ];
 
-    public function user()
+    public function dosenPA()
     {
-        return $this->belongsTo(User::class, 'id_user', 'id');
-    }
-
+        return $this->belongsTo(Staff::class, 'id_dosen_pa', 'id_staff');
+    } 
     public function ajuan()
-{
-    return $this->hasMany(
-        Ajuan::class,
-        'nim',
-        'nim'
-    );
-}
-
+    {
+    return $this->hasMany(Ajuan::class, 'nim', 'nim');
+    } 
 }
