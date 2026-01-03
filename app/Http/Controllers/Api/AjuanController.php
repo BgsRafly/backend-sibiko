@@ -24,31 +24,31 @@ public function index(Request $request)
     // 2. CREATE ajuan
     public function store(Request $request)
 {
+    // Validasi input dari mahasiswa
     $request->validate([
-        'judul_konseling'   => 'required',
-        'deskripsi_masalah' => 'required',
-        'jenis_layanan'     => 'required',
+        'judul_konseling'   => 'required|string|max:150',
+        'deskripsi_masalah' => 'required|string',
+        'jenis_layanan'     => 'required|string|max:50',
+        'tanggal_jadwal'    => 'required|date', // Mahasiswa mengusulkan tanggal & waktu
     ]);
 
     $mahasiswa = $request->user()->mahasiswa;
 
-    // DEBUG: Jika id_staff kosong, kirim pesan error agar kita tahu
-    if (is_null($mahasiswa->id_dosen_pa)) {
-        return response()->json([
-            'message' => 'Gagal! Mahasiswa ini belum memiliki Staff (id_staff null di database mahasiswa)',
-            'debug_mahasiswa_data' => $mahasiswa
-        ], 422);
+    if (!$mahasiswa) {
+        return response()->json(['message' => 'Profil mahasiswa tidak ditemukan'], 404);
     }
 
+    // Membuat record ajuan baru
     $ajuan = Ajuan::create([
-        'nim'               => $mahasiswa->nim,
+        'nim'               => $mahasiswa->nim, // Menggunakan kolom nim
+        'id_handler'        => $mahasiswa->id_dosen_pa, // Mengambil ID Staff/Dosen PA dari tabel mahasiswa
         'judul_konseling'   => $request->judul_konseling,
         'deskripsi_masalah' => $request->deskripsi_masalah,
         'jenis_layanan'     => $request->jenis_layanan,
-        'status'            => 'pending',
-        'tingkat_penanganan'=> 'Prodi',
-        'tanggal_pengajuan' => now(),
-        'id_handler'        => $mahasiswa->id_dosen_pa, 
+        'tanggal_pengajuan' => now(), // Otomatis waktu saat ini
+        'tanggal_jadwal'    => $request->tanggal_jadwal, // Menyimpan usulan jadwal dari mahasiswa
+        'status'            => 'pending', // Default status
+        'tingkat_penanganan'=> 'Prodi', // Default tingkat penanganan
     ]);
 
     return response()->json([

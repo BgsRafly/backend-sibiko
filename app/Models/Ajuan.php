@@ -27,8 +27,6 @@ class Ajuan extends Model
         'alasan_penolakan'
     ];
 
-    // Jika di database tidak ada created_at/updated_at (seperti di gambar kiri)
-    // aktifkan baris di bawah ini agar Laravel tidak error:
     public $timestamps = false; 
 
     /**
