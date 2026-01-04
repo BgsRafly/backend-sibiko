@@ -26,7 +26,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/mahasiswa/me', [MahasiswaController::class, 'showProfile']);
     Route::put('/mahasiswa/update-profil', [MahasiswaController::class, 'updateProfile']);
 
-   Route::middleware(['auth:sanctum'])->group(function () {
+Route::middleware(['auth:sanctum'])->group(function () {
     // Endpoint khusus Staff
     Route::prefix('staff')->group(function () {
         Route::get('/ajuan', [StaffAjuanController::class, 'index']);
@@ -47,7 +47,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
     // Dashboard & Statistik Utama
     Route::get('/admin/dashboard', [AdminController::class, 'dashboard']);
     Route::get('/admin/ajuan/all', [AdminController::class, 'allAjuan']);
-    
+    Route::get('/admin/laporan', [AdminController::class, 'laporan']);
+
     // Admin Mahasiswa (Identified by User ID)
     Route::get('/admin/mahasiswa', [AdminController::class, 'indexMahasiswa']);
     Route::post('/admin/mahasiswa', [AdminController::class, 'storeMahasiswa']); // Tambahan

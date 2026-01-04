@@ -16,48 +16,49 @@ class AdminController extends Controller
     // --- DASHBOARD ---
     public function dashboard()
     {
-    // Statistik User berdasarkan Role
-    $userStats = User::select('role', DB::raw('count(*) as total'))
-        ->groupBy('role')
-        ->get();
+        // Statistik User berdasarkan Role
+        $userStats = User::select('role', DB::raw('count(*) as total'))
+            ->groupBy('role')
+            ->get();
 
-    // Statistik Ajuan berdasarkan Status
-    $ajuanStats = Ajuan::select('status', DB::raw('count(*) as total'))
-        ->groupBy('status')
-        ->get();
+        // Statistik Ajuan berdasarkan Status
+        $ajuanStats = Ajuan::select('status', DB::raw('count(*) as total'))
+            ->groupBy('status')
+            ->get();
 
-    // Statistik Ajuan berdasarkan Tingkat Penanganan
-    $tingkatStats = Ajuan::select('tingkat_penanganan', DB::raw('count(*) as total'))
-        ->groupBy('tingkat_penanganan')
-        ->get();
+        // Statistik Ajuan berdasarkan Tingkat Penanganan
+        $tingkatStats = Ajuan::select('tingkat_penanganan', DB::raw('count(*) as total'))
+            ->groupBy('tingkat_penanganan')
+            ->get();
 
-    return response()->json([
-        'summary' => [
-            'total_mahasiswa' => Mahasiswa::count(),
-            'total_staff' => Staff::where('jabatan', '!=', 'Admin')->count(),
-            'total_ajuan' => Ajuan::count(),
-        ],
-        'user_distribution' => $userStats,
-        'ajuan_status_breakdown' => $ajuanStats,
-        'handling_level_breakdown' => $tingkatStats,
-        'latest_activities' => [
-            'recent_ajuan' => Ajuan::with('mahasiswa')
-                ->latest('tanggal_pengajuan')
-                ->take(5)
-                ->get(),
-            'urgent_referrals' => Ajuan::with('mahasiswa')
-                ->where('tingkat_penanganan', 'Fakultas')
-                ->where('status', 'pending')
-                ->take(5)
-                ->get()
-        ]
-    ]);
+        return response()->json([
+            'summary' => [
+                'total_mahasiswa' => Mahasiswa::count(),
+                'total_staff' => Staff::where('jabatan', '!=', 'Admin')->count(),
+                'total_ajuan' => Ajuan::count(),
+            ],
+            'user_distribution' => $userStats,
+            'ajuan_status_breakdown' => $ajuanStats,
+            'handling_level_breakdown' => $tingkatStats,
+            'latest_activities' => [
+                'recent_ajuan' => Ajuan::with('mahasiswa')
+                    ->latest('tanggal_pengajuan')
+                    ->take(5)
+                    ->get(),
+                'urgent_referrals' => Ajuan::with('mahasiswa')
+                    ->where('tingkat_penanganan', 'Fakultas')
+                    ->where('status', 'pending')
+                    ->take(5)
+                    ->get()
+            ]
+        ]);
     }
-public function allAjuan()
+
+    public function allAjuan()
     {
-    // Admin bisa melihat SEMUA data ajuan di seluruh sistem
-    $data = Ajuan::with(['mahasiswa', 'handler'])->latest().get();
-    return response()->json($data);
+        // Admin bisa melihat SEMUA data ajuan di seluruh sistem
+        $data = Ajuan::with(['mahasiswa', 'handler'])->latest().get();
+        return response()->json($data);
     }
 
     // --- CRUD MAHASISWA (Identified by id_user) ---
@@ -78,7 +79,7 @@ public function allAjuan()
     {
         $mahasiswa = Mahasiswa::where('id_user', $id_user)->firstOrFail();
         $user = User::findOrFail($id_user);
-        
+
         $request->validate([
             'nama_lengkap' => 'sometimes|required',
             'email' => 'sometimes|required|email',
@@ -132,7 +133,7 @@ public function allAjuan()
 
         return DB::transaction(function () use ($request, $staff, $user) {
             $staff->update($request->only(['nama_lengkap', 'jabatan', 'nip']));
-            
+
             if ($request->has('username')) {
                 $user->update(['username' => $request->username]);
             }
@@ -148,5 +149,24 @@ public function allAjuan()
             $user->delete();
             return response()->json(['message' => 'User dan Data Staff berhasil dihapus']);
         });
+    }
+
+    // --- LAPORAN STATISTIK ---
+    public function laporan(Request $request)
+    {
+        $query = Ajuan::with(['mahasiswa', 'handler']);
+
+        if ($request->has('jenis') && $request->jenis != 'Semua') {
+            $query->where('jenis_layanan', $request->jenis);
+        }
+
+        if ($request->has('start_date') && $request->has('end_date')) {
+            $query->whereBetween('tanggal_pengajuan', [
+                $request->start_date . ' 00:00:00',
+                $request->end_date . ' 23:59:59'
+            ]);
+        }
+
+        return response()->json($query->latest('tanggal_pengajuan')->get());
     }
 }

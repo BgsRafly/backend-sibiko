@@ -4,78 +4,84 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Ajuan;
+use App\Models\Staff;
 use Illuminate\Http\Request;
 
 class AjuanController extends Controller
 {
     // 1. LIST ajuan milik mahasiswa
-    // 1. LIST ajuan milik mahasiswa
-public function index(Request $request)
+    public function index(Request $request)
     {
-    $user = $request->user();
-    $mahasiswa = $user->mahasiswa;
+        $user = $request->user();
+        $mahasiswa = $user->mahasiswa;
 
-    // Ambil data langsung dari tabel ajuan berdasarkan NIM mahasiswa
-    $data = Ajuan::where('nim', $mahasiswa->nim)->get();
+        // Ambil data langsung dari tabel ajuan berdasarkan NIM mahasiswa
+        $data = Ajuan::where('nim', $mahasiswa->nim)->latest('tanggal_pengajuan')->get();
 
-    return response()->json($data);
+        return response()->json($data);
     }
 
     // 2. CREATE ajuan
     public function store(Request $request)
-{
-    // Validasi input dari mahasiswa
-    $request->validate([
-        'judul_konseling'   => 'required|string|max:150',
-        'deskripsi_masalah' => 'required|string',
-        'jenis_layanan'     => 'required|string|max:50',
-        'tanggal_jadwal'    => 'required|date', // Mahasiswa mengusulkan tanggal & waktu
-    ]);
+    {
+        // Validasi input dari mahasiswa
+        $request->validate([
+            'judul_konseling'   => 'required|string|max:150',
+            'deskripsi_masalah' => 'required|string',
+            'jenis_layanan'     => 'required|string|in:Akademik,Karir,Pribadi,Sosial',
+            'tanggal_jadwal'    => 'required|date', // Mahasiswa mengusulkan tanggal & waktu
+        ]);
 
-    $mahasiswa = $request->user()->mahasiswa;
+        $mahasiswa = $request->user()->mahasiswa;
 
-    if (!$mahasiswa) {
-        return response()->json(['message' => 'Profil mahasiswa tidak ditemukan'], 404);
+        if (!$mahasiswa) {
+            return response()->json(['message' => 'Profil mahasiswa tidak ditemukan'], 404);
+        }
+
+        $idHandler = $this->determineHandler($request->jenis_layanan, $mahasiswa);
+
+        if (is_array($idHandler)) {
+            return response()->json($idHandler, 422);
+        }
+
+        // Membuat record ajuan baru
+        $ajuan = Ajuan::create([
+            'nim'               => $mahasiswa->nim, // Menggunakan kolom nim
+            'id_handler'        => $idHandler, // Mengambil ID Staff/Dosen PA dari tabel mahasiswa
+            'judul_konseling'   => $request->judul_konseling,
+            'deskripsi_masalah' => $request->deskripsi_masalah,
+            'jenis_layanan'     => $request->jenis_layanan,
+            'tanggal_pengajuan' => now(), // Otomatis waktu saat ini
+            'tanggal_jadwal'    => $request->tanggal_jadwal, // Menyimpan usulan jadwal dari mahasiswa
+            'status'            => 'pending',
+            'tingkat_penanganan'=> 'Prodi',
+        ]);
+
+        return response()->json([
+            'message' => 'Ajuan berhasil dibuat',
+            'data'    => $ajuan
+        ], 201);
     }
-
-    // Membuat record ajuan baru
-    $ajuan = Ajuan::create([
-        'nim'               => $mahasiswa->nim, // Menggunakan kolom nim
-        'id_handler'        => $mahasiswa->id_dosen_pa, // Mengambil ID Staff/Dosen PA dari tabel mahasiswa
-        'judul_konseling'   => $request->judul_konseling,
-        'deskripsi_masalah' => $request->deskripsi_masalah,
-        'jenis_layanan'     => $request->jenis_layanan,
-        'tanggal_pengajuan' => now(), // Otomatis waktu saat ini
-        'tanggal_jadwal'    => $request->tanggal_jadwal, // Menyimpan usulan jadwal dari mahasiswa
-        'status'            => 'pending', 
-        'tingkat_penanganan'=> 'Prodi', 
-    ]);
-
-    return response()->json([
-        'message' => 'Ajuan berhasil dibuat',
-        'data'    => $ajuan
-    ], 201);
-}
 
     // 3. DETAIL ajuan
-   public function show(Request $request)
+    public function show(Request $request, $id)
     {
-    $mahasiswa = $request->user()->mahasiswa;
+        $mahasiswa = $request->user()->mahasiswa;
 
-    $ajuan = Ajuan::where('nim', $mahasiswa->nim)
-        ->latest('tanggal_pengajuan') 
-        ->first();
+        $ajuan = Ajuan::where('id_ajuan', $id)
+            ->where('nim', $mahasiswa->nim)
+            ->first();
 
-    if (!$ajuan) {
-        return response()->json([
-            'message' => 'Anda belum pernah membuat ajuan'
-        ], 404);
+        if (!$ajuan) {
+            return response()->json([
+                'message' => 'Anda belum pernah membuat ajuan'
+            ], 404);
+        }
+
+        return response()->json($ajuan);
     }
 
-    return response()->json($ajuan);
-    }
 
-    
 
     // 4. UPDATE ajuan
     public function update(Request $request, $id)
@@ -93,11 +99,19 @@ public function index(Request $request)
             ], 403);
         }
 
-        $ajuan->update($request->only([
-            'judul_konseling',
-            'deskripsi_masalah',
-            'jenis_layanan',
-        ]));
+        $updateData = $request->only(['judul_konseling', 'deskripsi_masalah', 'jenis_layanan', 'tanggal_jadwal']);
+
+        if ($request->has('jenis_layanan') && $request->jenis_layanan !== $ajuan->jenis_layanan) {
+            $newHandler = $this->determineHandler($request->jenis_layanan, $mahasiswa);
+
+            if (is_array($newHandler)) {
+                return response()->json($newHandler, 422);
+            }
+
+            $updateData['id_handler'] = $newHandler;
+        }
+
+        $ajuan->update($updateData);
 
         return response()->json([
             'message' => 'Ajuan berhasil diperbarui',
@@ -126,5 +140,24 @@ public function index(Request $request)
         return response()->json([
             'message' => 'Ajuan berhasil dihapus'
         ]);
+    }
+
+    private function determineHandler($jenis, $mahasiswa)
+    {
+        if ($jenis === 'Akademik' || $jenis === 'Karir') {
+            $idHandler = $mahasiswa->id_dosen_pa;
+            if (!$idHandler) {
+                return ['message' => 'Anda belum memiliki Dosen PA. Hubungi Admin.'];
+            }
+            return $idHandler;
+        }
+        else if ($jenis === 'Pribadi' || $jenis === 'Sosial') {
+            $konselor = Staff::where('jabatan', 'Konselor')->first();
+            if (!$konselor) {
+                return ['message' => 'Data Konselor belum tersedia di sistem.'];
+            }
+            return $konselor->id_staff;
+        }
+        return null;
     }
 }
