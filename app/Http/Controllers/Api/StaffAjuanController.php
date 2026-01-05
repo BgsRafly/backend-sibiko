@@ -7,35 +7,26 @@ use Illuminate\Http\Request;
 
 class StaffAjuanController extends Controller
 {
-    // Melihat daftar ajuan yang masuk ke Staff tersebut
     public function index(Request $request) {
         $staff = $request->user()->staff;
-        
+
         $data = Ajuan::with('mahasiswa')
             ->where('id_handler', $staff->id_staff)
+            ->where('tingkat_penanganan', 'Prodi')
             ->get();
 
         return response()->json($data);
     }
 
-    // Detail Ajuan
     public function show(Request $request, $id) {
         $staff = $request->user()->staff;
-        
-        $ajuan = Ajuan::with('mahasiswa')
-            ->where('id_handler', $staff->id_staff)
-            ->where('id_ajuan', $id)
-            ->firstOrFail();
-
+        $ajuan = Ajuan::with('mahasiswa')->where('id_handler', $staff->id_staff)->where('id_ajuan', $id)->firstOrFail();
         return response()->json($ajuan);
     }
 
-    // Update Status (Terima, Tolak, Reschedule)
     public function updateStatus(Request $request, $id) {
         $staff = $request->user()->staff;
-        $ajuan = Ajuan::where('id_handler', $staff->id_staff)
-            ->where('id_ajuan', $id)
-            ->firstOrFail();
+        $ajuan = Ajuan::where('id_handler', $staff->id_staff)->where('id_ajuan', $id)->firstOrFail();
 
         $request->validate([
             'status' => 'required|in:disetujui,ditolak,reschedule',
@@ -61,14 +52,20 @@ class StaffAjuanController extends Controller
 
         $request->validate([
             'catatan_sesi' => 'required',
-            'tingkat_penanganan' => 'required|in:Prodi,Fakultas', // Fakultas berarti rujukan ke WD3
+            'tingkat_penanganan' => 'required|in:Prodi,Fakultas',
         ]);
 
-        $ajuan->update([
+        $updateData = [
             'catatan_sesi' => $request->catatan_sesi,
             'tingkat_penanganan' => $request->tingkat_penanganan,
-            'status' => ($request->tingkat_penanganan == 'Fakultas') ? 'pending' : 'terkirim', 
-        ]);
+        ];
+
+        if ($request->tingkat_penanganan == 'Fakultas') {
+            $updateData['status'] = 'pending wd3';
+            $updateData['tanggal_jadwal'] = null;
+        }
+
+        $ajuan->update($updateData);
 
         return response()->json(['message' => 'Sesi diperbarui']);
     }
