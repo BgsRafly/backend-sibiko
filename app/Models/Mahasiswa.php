@@ -22,7 +22,7 @@ class Mahasiswa extends Model
     ];
 
     // Relasi ke tabel Staff (Dosen PA)
-    public function dosenPA()
+    public function staff()
     {
         return $this->belongsTo(Staff::class, 'id_dosen_pa', 'id_staff');
     }

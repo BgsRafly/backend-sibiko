@@ -12,27 +12,23 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('staff', function (Blueprint $table) {
-    $table->id('id_staff');
+            $table->id('id_staff');
+            $table->string('nip', 50)->unique();
+            $table->unsignedBigInteger('id_user');
+            $table->string('nama_lengkap');
+            $table->enum('jabatan', [
+                'Dosen PA',
+                'Konselor',
+                'Wakil Dekan 3',
+                'Admin'
+            ]);
+            $table->timestamps();
 
-    $table->string('nip', 50)->unique();
-    $table->unsignedBigInteger('id_user');
-
-    $table->string('nama_lengkap');
-    $table->enum('jabatan', [
-        'Dosen PA',
-        'Konselor',
-        'Wakil Dekan 3',
-        'Admin'
-    ]);
-
-    $table->timestamps();
-
-    $table->foreign('id_user')
-        ->references('id')
-        ->on('users')
-        ->onDelete('cascade');
-});
-
+            $table->foreign('id_user')
+                ->references('id')
+                ->on('users')
+                ->onDelete('cascade');
+        });
     }
 
     /**

@@ -16,7 +16,10 @@ class AjuanController extends Controller
         $mahasiswa = $user->mahasiswa;
 
         // Ambil data langsung dari tabel ajuan berdasarkan NIM mahasiswa
-        $data = Ajuan::where('nim', $mahasiswa->nim)->latest('tanggal_pengajuan')->get();
+        $data = Ajuan::with('handler')
+            ->where('nim', $mahasiswa->nim)
+            ->latest('tanggal_pengajuan')
+            ->get();
 
         return response()->json($data);
     }
@@ -68,7 +71,8 @@ class AjuanController extends Controller
     {
         $mahasiswa = $request->user()->mahasiswa;
 
-        $ajuan = Ajuan::where('id_ajuan', $id)
+        $ajuan = Ajuan::with('handler')
+            ->where('id_ajuan', $id)
             ->where('nim', $mahasiswa->nim)
             ->first();
 
@@ -81,8 +85,6 @@ class AjuanController extends Controller
         return response()->json($ajuan);
     }
 
-
-
     // 4. UPDATE ajuan
     public function update(Request $request, $id)
     {
@@ -92,8 +94,17 @@ class AjuanController extends Controller
             ->where('nim', $mahasiswa->nim)
             ->firstOrFail();
 
-        // Validasi: Hanya status 'pending' yang boleh diubah
-        if ($ajuan->status !== 'pending') {
+        if ($request->has('status') && $request->status === 'setuju') {
+            if ($ajuan->status === 'reschedule') {
+                $ajuan->update(['status' => 'disetujui']);
+            }
+            elseif ($ajuan->status === 'reschedule wd3') {
+                $ajuan->update(['status' => 'disetujui wd3']);
+            }
+            return response()->json(['message' => 'Jadwal disetujui', 'data' => $ajuan]);
+        }
+
+        if (!in_array($ajuan->status, ['pending', 'reschedule'])) {
             return response()->json([
                 'message' => 'Ajuan tidak dapat diubah karena status sudah ' . $ajuan->status
             ], 403);
@@ -101,13 +112,13 @@ class AjuanController extends Controller
 
         $updateData = $request->only(['judul_konseling', 'deskripsi_masalah', 'jenis_layanan', 'tanggal_jadwal']);
 
+        if ($request->has('tanggal_jadwal')) {
+            $updateData['status'] = 'pending';
+        }
+
         if ($request->has('jenis_layanan') && $request->jenis_layanan !== $ajuan->jenis_layanan) {
             $newHandler = $this->determineHandler($request->jenis_layanan, $mahasiswa);
-
-            if (is_array($newHandler)) {
-                return response()->json($newHandler, 422);
-            }
-
+            if (is_array($newHandler)) return response()->json($newHandler, 422);
             $updateData['id_handler'] = $newHandler;
         }
 

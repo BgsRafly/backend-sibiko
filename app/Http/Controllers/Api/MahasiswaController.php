@@ -9,6 +9,32 @@ use Illuminate\Support\Facades\Auth;
 
 class MahasiswaController extends Controller
 {
+
+    public function dashboard(Request $request)
+    {
+        $mahasiswa = $request->user()->mahasiswa;
+
+        $stats = [
+            'total' => \App\Models\Ajuan::where('nim', $mahasiswa->nim)->count(),
+            'pending' => \App\Models\Ajuan::where('nim', $mahasiswa->nim)
+                ->whereIn('status', ['pending', 'reschedule'])->count(),
+            'approved' => \App\Models\Ajuan::where('nim', $mahasiswa->nim)
+                ->where('status', 'disetujui')->count(),
+            'completed' => \App\Models\Ajuan::where('nim', $mahasiswa->nim)
+                ->where('status', 'selesai')->count(),
+        ];
+
+        $recent = \App\Models\Ajuan::where('nim', $mahasiswa->nim)
+            ->latest('tanggal_pengajuan')
+            ->take(5)
+            ->get();
+
+        return response()->json([
+            'stats' => $stats,
+            'recent_activities' => $recent
+        ]);
+    }
+
     /**
      * Update Profil Mahasiswa (Kecuali NIM)
      */
@@ -52,7 +78,7 @@ class MahasiswaController extends Controller
     public function showProfile()
     {
         $user = Auth::user();
-        $mahasiswa = Mahasiswa::where('id_user', $user->id)->firstOrFail();
+        $mahasiswa = Mahasiswa::with('staff')->where('id_user', $user->id)->firstOrFail();
 
         return response()->json($mahasiswa);
     }
