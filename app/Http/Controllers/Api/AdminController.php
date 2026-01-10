@@ -13,20 +13,16 @@ use Illuminate\Support\Facades\DB;
 
 class AdminController extends Controller
 {
-    // --- DASHBOARD ---
     public function dashboard()
     {
-        // Statistik User berdasarkan Role
         $userStats = User::select('role', DB::raw('count(*) as total'))
             ->groupBy('role')
             ->get();
 
-        // Statistik Ajuan berdasarkan Status
         $ajuanStats = Ajuan::select('status', DB::raw('count(*) as total'))
             ->groupBy('status')
             ->get();
 
-        // Statistik Ajuan berdasarkan Tingkat Penanganan
         $tingkatStats = Ajuan::select('tingkat_penanganan', DB::raw('count(*) as total'))
             ->groupBy('tingkat_penanganan')
             ->get();
@@ -81,8 +77,6 @@ class AdminController extends Controller
         return response()->json($query->latest('tanggal_pengajuan')->get());
     }
 
-    // --- CRUD MAHASISWA (Identified by id_user) ---
-
     public function storeMahasiswa(Request $request)
     {
         $request->validate([
@@ -104,11 +98,11 @@ class AdminController extends Controller
             ]);
 
             $mahasiswa = Mahasiswa::create([
-                'nim'          => $request->username, // Asumsi NIM = Username
+                'nim'          => $request->username,
                 'nama_lengkap' => $request->nama_lengkap,
                 'prodi'        => $request->prodi,
                 'email'        => $request->email,
-                'no_hp'        => '-',
+                'no_hp'        => $request->no_hp ?? '-',
                 'id_dosen_pa'  => $request->id_dosen_pa,
                 'id_user'      => $user->id
             ]);
@@ -119,7 +113,6 @@ class AdminController extends Controller
 
     public function indexMahasiswa()
     {
-        // Mengambil data mahasiswa beserta relasi usernya
         return response()->json(Mahasiswa::with(['user', 'staff'])->get());
     }
 
@@ -137,16 +130,18 @@ class AdminController extends Controller
         $request->validate([
             'nama_lengkap' => 'sometimes|required',
             'email' => 'sometimes|required|email',
-            'id_dosen_pa' => 'nullable|exists:staff,id_staff'
+            'id_dosen_pa' => 'nullable|exists:staff,id_staff',
+            'password' => 'nullable|min:6'
         ]);
 
         return DB::transaction(function () use ($request, $mahasiswa, $user) {
-            // Update data profil mahasiswa
             $mahasiswa->update($request->only(['nama_lengkap', 'prodi', 'email', 'no_hp', 'id_dosen_pa']));
 
-            // Update data login jika ada username baru
-            if ($request->has('username')) {
-                $user->update(['username' => $request->username]);
+            if ($request->has('username')) $user->update(['username' => $request->username]);
+            if ($request->has('email')) $user->update(['email' => $request->email]);
+
+            if ($request->filled('password')) {
+                $user->update(['password' => Hash::make($request->password)]);
             }
 
             return response()->json(['message' => 'Mahasiswa berhasil diperbarui', 'data' => $mahasiswa->load('user')]);
@@ -157,33 +152,33 @@ class AdminController extends Controller
     {
         return DB::transaction(function () use ($id_user) {
             $user = User::findOrFail($id_user);
-            // Karena ON DELETE CASCADE di database, menghapus user otomatis menghapus mahasiswa
             $user->delete();
             return response()->json(['message' => 'User dan Data Mahasiswa berhasil dihapus']);
         });
     }
 
-    // --- CRUD STAFF (Identified by id_user) ---
-
     public function storeStaff(Request $request)
     {
         $request->validate([
-            'username'     => 'required|unique:users,username', // NIP
+            'username'     => 'required|unique:users,username',
             'password'     => 'required|min:6',
             'nama_lengkap' => 'required',
             'jabatan'      => 'required|in:Dosen PA,Konselor,Wakil Dekan 3,Admin',
+            'email'        => 'nullable|email',
+            'no_hp'        => 'nullable|string'
         ]);
 
         return DB::transaction(function () use ($request) {
-            $roleUser = 'dosen'; // Default
+            $roleUser = 'dosen';
             if ($request->jabatan === 'Admin') $roleUser = 'admin';
             if ($request->jabatan === 'Wakil Dekan 3') $roleUser = 'wd3';
-            if ($request->jabatan === 'Konselor') $roleUser = 'konselor'; // atau staff
+            if ($request->jabatan === 'Konselor') $roleUser = 'konselor';
 
             $user = User::create([
                 'username' => $request->username,
                 'password' => Hash::make($request->password),
                 'name'     => $request->nama_lengkap,
+                'email'    => $request->email ?? ($request->username . '@unud.ac.id'),
                 'role'     => $roleUser
             ]);
 
@@ -191,6 +186,8 @@ class AdminController extends Controller
                 'nip'          => $request->username,
                 'nama_lengkap' => $request->nama_lengkap,
                 'jabatan'      => $request->jabatan,
+                'email'        => $request->email,
+                'no_hp'        => $request->no_hp,
                 'id_user'      => $user->id
             ]);
 
@@ -215,14 +212,20 @@ class AdminController extends Controller
 
         $request->validate([
             'nama_lengkap' => 'sometimes|required',
-            'jabatan' => 'sometimes|required|in:Dosen PA,Konselor,Wakil Dekan 3,Admin'
+            'jabatan' => 'sometimes|required|in:Dosen PA,Konselor,Wakil Dekan 3,Admin',
+            'email' => 'nullable|email',
+            'no_hp' => 'nullable|string',
+            'password' => 'nullable|min:6'
         ]);
 
         return DB::transaction(function () use ($request, $staff, $user) {
-            $staff->update($request->only(['nama_lengkap', 'jabatan', 'nip']));
+            $staff->update($request->only(['nama_lengkap', 'jabatan', 'nip', 'email', 'no_hp']));
 
-            if ($request->has('username')) {
-                $user->update(['username' => $request->username]);
+            if ($request->has('username')) $user->update(['username' => $request->username]);
+            if ($request->has('email')) $user->update(['email' => $request->email]);
+
+            if ($request->filled('password')) {
+                $user->update(['password' => Hash::make($request->password)]);
             }
 
             return response()->json(['message' => 'Staff berhasil diperbarui', 'data' => $staff->load('user')]);
@@ -238,7 +241,6 @@ class AdminController extends Controller
         });
     }
 
-    // --- LAPORAN STATISTIK ---
     public function laporan(Request $request)
     {
         $query = Ajuan::with(['mahasiswa', 'handler']);

@@ -30,6 +30,19 @@ class StaffController extends Controller
                 ->count(),
             'total_mhs' => (clone $query)->distinct('nim')->count('nim')
         ];
+
+        return response()->json($stats);
+    }
+
+    public function showProfile(Request $request)
+    {
+        $user = $request->user()->load('staff');
+
+        if (!$user->staff) {
+            return response()->json(['message' => 'Data staff tidak ditemukan'], 404);
+        }
+
+        return response()->json($user->staff);
     }
 
     public function listAjuan()

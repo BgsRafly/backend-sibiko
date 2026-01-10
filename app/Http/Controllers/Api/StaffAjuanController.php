@@ -12,7 +12,7 @@ class StaffAjuanController extends Controller
 
         $data = Ajuan::with('mahasiswa')
             ->where('id_handler', $staff->id_staff)
-            ->where('tingkat_penanganan', 'Prodi')
+            ->latest('tanggal_pengajuan')
             ->get();
 
         return response()->json($data);
@@ -20,7 +20,10 @@ class StaffAjuanController extends Controller
 
     public function show(Request $request, $id) {
         $staff = $request->user()->staff;
-        $ajuan = Ajuan::with('mahasiswa')->where('id_handler', $staff->id_staff)->where('id_ajuan', $id)->firstOrFail();
+        $ajuan = Ajuan::with('mahasiswa')
+            ->where('id_handler', $staff->id_staff)
+            ->where('id_ajuan', $id)
+            ->firstOrFail();
         return response()->json($ajuan);
     }
 
@@ -43,7 +46,6 @@ class StaffAjuanController extends Controller
         return response()->json(['message' => 'Status ajuan diperbarui', 'data' => $ajuan]);
     }
 
-    // Menyelesaikan Sesi (Selesai / Rujuk ke WD3)
     public function completeSession(Request $request, $id) {
         $staff = $request->user()->staff;
         $ajuan = Ajuan::where('id_handler', $staff->id_staff)
@@ -56,13 +58,15 @@ class StaffAjuanController extends Controller
         ]);
 
         $updateData = [
-            'catatan_sesi' => $request->catatan_sesi,
+            'catatan_dosen' => $request->catatan_sesi,
             'tingkat_penanganan' => $request->tingkat_penanganan,
         ];
 
         if ($request->tingkat_penanganan == 'Fakultas') {
             $updateData['status'] = 'pending wd3';
             $updateData['tanggal_jadwal'] = null;
+        } else {
+            $updateData['status'] = 'selesai';
         }
 
         $ajuan->update($updateData);

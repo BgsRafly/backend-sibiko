@@ -14,6 +14,8 @@ class Staff extends Model
         'nip',
         'nama_lengkap',
         'jabatan',
+        'no_hp',
+        'email',
     ];
 
     public function user()

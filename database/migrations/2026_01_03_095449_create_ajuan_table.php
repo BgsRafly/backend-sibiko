@@ -20,8 +20,16 @@ return new class extends Migration
             $table->string('jenis_layanan', 50);
             $table->dateTime('tanggal_pengajuan')->useCurrent();
             $table->dateTime('tanggal_jadwal')->nullable();
-            $table->enum('status', ['pending', 'reschedule', 'ditolak', 'disetujui', 'pending wd3', 'reschedule wd3', 'ditolak wd3', 'disetujui wd3', 'rujuk universitas', 'selesai'])->default('pending');
-            $table->text('catatan_sesi')->nullable();
+
+            $table->enum('status', [
+                'pending', 'reschedule', 'ditolak', 'disetujui',
+                'pending wd3', 'reschedule wd3', 'ditolak wd3', 'disetujui wd3',
+                'rujuk universitas', 'selesai'
+            ])->default('pending');
+
+            $table->text('catatan_dosen')->nullable();
+            $table->text('catatan_wd3')->nullable();
+
             $table->enum('tingkat_penanganan', ['Prodi', 'Fakultas', 'Universitas'])->default('Prodi');
             $table->text('alasan_penolakan')->nullable();
             $table->timestamps();

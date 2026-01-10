@@ -9,12 +9,8 @@ use Illuminate\Support\Facades\Hash;
 
 class DatabaseSeeder extends Seeder
 {
-    /**
-     * Seed the application's database.
-     */
     public function run(): void
     {
-        // 1. ADMIN - Admin FMIPA
         $userAdmin = User::create([
             'username' => '199001012011011001',
             'password' => Hash::make('admin123'),
@@ -25,10 +21,11 @@ class DatabaseSeeder extends Seeder
             'id_user'      => $userAdmin->id,
             'nip'          => '199001012011011001',
             'nama_lengkap' => 'Admin FMIPA',
-            'jabatan'      => 'Admin'
+            'jabatan'      => 'Admin',
+            'email'        => 'admin.fmipa@unud.ac.id',
+            'no_hp'        => '-'
         ]);
 
-        // 2. DOSEN 1 - Bu Vida
         $userVida = User::create([
             'username' => '199006062022032009',
             'password' => Hash::make('vida123'),
@@ -39,10 +36,11 @@ class DatabaseSeeder extends Seeder
             'id_user'      => $userVida->id,
             'nip'          => '199006062022032009',
             'nama_lengkap' => 'Gst. Ayu Vida Mastrika Giri, S.Kom., M.Cs.',
-            'jabatan'      => 'Dosen PA'
+            'jabatan'      => 'Dosen PA',
+            'no_hp'        => '085737241069',
+            'email'        => 'vida@unud.ac.id'
         ]);
 
-        // 3. KONSELOR - Pak Anom
         $userAnom = User::create([
             'username' => '198403172019031005',
             'password' => Hash::make('anom123'),
@@ -53,10 +51,11 @@ class DatabaseSeeder extends Seeder
             'id_user'      => $userAnom->id,
             'nip'          => '198403172019031005',
             'nama_lengkap' => 'Ir. I Gusti Ngurah Anom Cahyadi Putra, ST., M.Cs',
-            'jabatan'      => 'Konselor'
+            'jabatan'      => 'Konselor',
+            'no_hp'        => '082146293573',
+            'email'        => 'anom.cp@unud.ac.id'
         ]);
 
-        // 4. DOSEN 2 - Pak Gede Santi
         $userGeda = User::create([
             'username' => '198012062006041003',
             'password' => Hash::make('geda123'),
@@ -67,10 +66,11 @@ class DatabaseSeeder extends Seeder
             'id_user'      => $userGeda->id,
             'nip'          => '198012062006041003',
             'nama_lengkap' => 'I Gede Santi Astawa, S.T., M.Cs.',
-            'jabatan'      => 'Dosen PA'
+            'jabatan'      => 'Dosen PA',
+            'no_hp'        => '087862766628',
+            'email'        => 'santi.astawa@unud.ac.id'
         ]);
 
-        // 5. WAKIL DEKAN 3 - Bu Rupiasih
         $userWD3 = User::create([
             'username' => '196904081994122001',
             'password' => Hash::make('wd3123'),
@@ -81,7 +81,9 @@ class DatabaseSeeder extends Seeder
             'id_user'      => $userWD3->id,
             'nip'          => '196904081994122001',
             'nama_lengkap' => 'Ni Nyoman Rupiasih',
-            'jabatan'      => 'Wakil Dekan 3'
+            'jabatan'      => 'Wakil Dekan 3',
+            'no_hp'        => '-',
+            'email'        => 'rupiasih@unud.ac.id'
         ]);
     }
 }
