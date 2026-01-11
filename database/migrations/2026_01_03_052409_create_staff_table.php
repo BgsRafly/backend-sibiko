@@ -16,6 +16,9 @@ return new class extends Migration
             $table->string('nip', 50)->unique();
             $table->unsignedBigInteger('id_user');
             $table->string('nama_lengkap');
+            $table->string('no_hp', 20)->nullable();
+            $table->string('email', 100)->nullable();
+
             $table->enum('jabatan', [
                 'Dosen PA',
                 'Konselor',

@@ -10,27 +10,49 @@ use Illuminate\Support\Facades\Hash;
 class AuthController extends Controller
 {
     public function login(Request $request)
-{
-    $request->validate([
-        'username' => 'required',
-        'password' => 'required',
-    ]);
+    {
+        $request->validate([
+            'username' => 'required',
+            'password' => 'required',
+        ]);
 
-    $user = User::where('username', $request->username)->first();
+        $user = User::where('username', $request->username)->first();
 
-    if (!$user || !Hash::check($request->password, $user->password)) {
+        if (!$user || !Hash::check($request->password, $user->password)) {
+            return response()->json([
+                'message' => 'Username atau password salah'
+            ], 401);
+        }
+
+        $token = $user->createToken('auth-token')->plainTextToken;
+
         return response()->json([
-            'message' => 'Username atau password salah'
-        ], 401);
+            'token' => $token,
+            'user'  => $user->load(['mahasiswa', 'staff'])
+        ]);
     }
 
-    $token = $user->createToken('auth-token')->plainTextToken;
+    public function changePassword(Request $request)
+    {
+        $request->validate([
+            'current_password' => 'required',
+            'new_password'     => 'required|min:6|confirmed',
+        ]);
 
-   return response()->json([
-        'token' => $token,
-        'user'  => $user->load(['mahasiswa', 'staff'])
-    ]);
-}
+        $user = $request->user();
+
+        if (!Hash::check($request->current_password, $user->password)) {
+            return response()->json([
+                'message' => 'Password lama salah.'
+            ], 422);
+        }
+
+        $user->update([
+            'password' => Hash::make($request->new_password)
+        ]);
+
+        return response()->json(['message' => 'Password berhasil diperbarui.']);
+    }
 
 
     public function logout(Request $request)

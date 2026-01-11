@@ -13,16 +13,15 @@ return new class extends Migration
 {
     Schema::create('surat_rujukan', function (Blueprint $table) {
         $table->increments('id_surat'); //
-        
+
         $table->integer('id_ajuan'); //
-        
+
         $table->string('nomor_surat', 50); //
         $table->text('keterangan_universitas'); //
         $table->date('tanggal_cetak'); //
-        
+
         $table->timestamps();
 
-        // Foreign Key Constraint
         $table->foreign('id_ajuan')
               ->references('id_ajuan')
               ->on('ajuan')

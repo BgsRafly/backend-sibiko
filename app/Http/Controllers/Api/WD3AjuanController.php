@@ -23,7 +23,6 @@ class WD3AjuanController extends Controller
         return response()->json($ajuan);
     }
 
-    // WD3 menentukan jadwal pertemuan
     public function setJadwal(Request $request, $id)
     {
         $request->validate([
@@ -57,7 +56,7 @@ class WD3AjuanController extends Controller
                 : 'selesai';
 
             $ajuan->update([
-                'catatan_sesi' => $request->catatan_sesi,
+                'catatan_wd3' => $request->catatan_sesi,
                 'tingkat_penanganan' => $request->tingkat_penanganan,
                 'status' => $statusBaru,
             ]);
@@ -76,7 +75,7 @@ class WD3AjuanController extends Controller
                 ? 'Ajuan berhasil dirujuk ke Universitas.'
                 : 'Sesi tingkat fakultas selesai.';
 
-            return response()->json(['message' => $message, 'data' => $ajuan]);
+            return response()->json(['message' => 'Status diperbarui', 'data' => $ajuan]);
         });
     }
 
